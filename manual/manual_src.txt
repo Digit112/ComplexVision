@@ -1,6 +1,6 @@
 \documentclass{article}
 
-\title{The More Mandel Manual}
+\title{The ComplexVision Manual}
 \author{Ekobadd}
 
 \usepackage{amsmath}
@@ -57,9 +57,7 @@
 
 \maketitle
 
-\section{About More Mandel}
-
-So named because I have attempted this many times before.
+\section{About ComplexVision}
 
 This piece of software is a passion project of mine, a culmination of significant effort and research over years that allows the production of a variety of renders of the Mandelbrot set. Ultimately, it is intended to allow the user to define a path for a virtual camera to follow to produce an animation of renders over the complex plain, which is populated with samples from any one of the infinite family of fractals defined by the equation $Z_n=Z_{n-1}^2+C$ (not just the eponymous Mandelbrot set).
 
@@ -79,12 +77,18 @@ Finally, this frame is converted into an image file by using the sample from to 
 
 \subsection{Resource Acquisition and Utilization}
 
-More Mandel will, by default, acquire almost as many computing resources as the OS will allow it to. This entails the creation of multiple CPU threads and the acquisition of all OpenCL-capable devices (typically graphics cards), all of which will be occupied primarily with performing Mandelbrot samples, as a typical animation often requires more than a trillion such samples. Additional threads handle ancillary operations, primarily saving to disk.
+ComplexVision will, by default, acquire almost as many computing resources as the OS will allow it to. This entails the creation of multiple CPU threads and the acquisition of all OpenCL-capable devices (typically graphics cards), all of which will be occupied primarily with performing Mandelbrot samples, as a typical animation often requires more than a trillion such samples. Additional threads handle ancillary operations, primarily saving to disk.
 
 A substantial bottleneck for performance is memory. This is because multiple frames may be required for each concurrent render. For example, multiple colored frames may be produced from a single sample frame (a full-size one, a slightly cropped version to produce the next frame, and so on) but a frame often exceeds hundreds of megabytes in size, causing issues with allocating the space for all of them.
 
 Therefore, a significant issue arises in the problem of keeping memory usage below a certain threshold while maximizing the utilization of available resources. Luckily, all of the most computationally complex issues are highly parallelizable. This means that individual frames can themselves be partitioned among multiple resources. However, memory remains the bottleneck in cases where the workload does not saturate these resources. A scarcity of memory may also force the host (but not the device) to wait for a save to disk to complete before rendering the next frame.
 
 The render controller allocates new frames until available computing resources are saturated by the workload or until it reaches its allocation limit. Computing resources include all CPU cores and OpenCL-capable devices.
+
+Available threads are considered saturated if they have been assigned as much work as they are capable of handling concurrently. For CPU threads, this simply means that some amount of work has been assigned. For OpenCL devices, this means that a sufficient amount of work has been assigned to utilize all streaming multiprocessors (or some equivalent thereof) up to the GPU saturation limit, notwithstanding delays introduced by practical limitations in GPU scheduling.
+
+\subsection{The Rendering Pipeline Details}
+
+A rendering context provides all of the information necessary to generate camera matrices, each of which is comprised primarily of a transformation matrix which specifies the transformation from screen space into the complex plane. Each matrix is generated in turn and converted into a work-item which consists of at least three steps: sampling, coloring, and saving. Additional steps may be inserted in the form of filters.
 
 \end{document}
